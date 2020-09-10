@@ -18,6 +18,7 @@ import {createStackNavigator} from '@react-navigation/stack';
 import HomeScreen from './components/Homescreen';
 import FirstAnimation from './components/animations/FirstAnimation';
 import Transitions from './components/animations/Transitions';
+import views from './views';
 
 const Stack = createStackNavigator();
 
@@ -27,21 +28,13 @@ const App = () => {
       <StatusBar barStyle="dark-content" />
       <NavigationContainer>
         <Stack.Navigator>
+          {views.map(view => (
           <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{title: 'Home Screen'}}
+              name={view.name}
+              component={view.component}
+              options={view.options}
           />
-          <Stack.Screen
-            name="FirstAnimation"
-            component={FirstAnimation}
-            options={{title: 'First Animation'}}
-          />
-          <Stack.Screen
-            name="Transitions"
-            component={Transitions}
-            options={{title: 'Transitions'}}
-          />
+          ))}
         </Stack.Navigator>
       </NavigationContainer>
     </>

@@ -1,17 +1,16 @@
 import React from 'react';
 import {View, StyleSheet, Button} from 'react-native';
+import views from '../views';
 
 const HomeScreen = ({navigation}: any) => {
   return (
     <View style={styles.container}>
+      {views.map(view => (
       <Button
-        title={'Clocks and Timing Animations'}
-        onPress={() => navigation.navigate('FirstAnimation')}
+        title={view.name}
+        onPress={() => navigation.navigate(view.name)}
       />
-      <Button
-        title={'Transitions'}
-        onPress={() => navigation.navigate('Transitions')}
-      />
+      ))}
     </View>
   );
 };
