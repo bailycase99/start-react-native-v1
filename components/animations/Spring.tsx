@@ -1,118 +1,63 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import StyleGuide from '../StyleGuide';
-import Card, { cards, CARD_WIDTH, CARD_HEIGHT } from '../Card';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
-import { onGestureEvent, clamp } from 'react-native-redash';
-import Animated, {
-    event,
-    Value,
-    block,
-    cond,
-    eq,
-    set,
-    add,
-    diffClamp,
-    Clock,
-    clockRunning,
-    startClock,
-    not,
-    and,
-    stopClock,
-    decay,
-    neq,
-} from 'react-native-reanimated';
+import React from 'react'
+import { Dimensions, StyleSheet, View } from "react-native";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
+import Animated, { Value } from "react-native-reanimated";
+import Constants from "expo-constants";
+import { onGestureEvent } from "react-native-redash";
+import StyleGuide from '../StyleGuide'
+import { withSpring } from './Helpers'
+import Card, { CARD_HEIGHT, CARD_WIDTH, cards } from "../Card";
 
-interface Props { }
-
+const { width, height } = Dimensions.get("window");
+const containerWidth = width;
+const containerHeight = height - Constants.statusBarHeight - 44;
+const snapX = (containerWidth - CARD_WIDTH) / 2;
+const snapY = (containerHeight - CARD_HEIGHT) / 2;
+const offsetX = new Value(snapX);
+const offsetY = new Value(snapY);
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: StyleGuide.palette.background,
     },
 });
-
 const [card] = cards;
 
-interface withSpringProps {
-  value: Animated.Adaptable<number>;
-  velocity: Animated.Adaptable<number>;
-  state: Animated.Value<State>;
-  offset?: Animated.Value<number>;
-  deceleration?: number;
-  snap: number
-}
-
-const withSpring = (config: withSpringProps) => {
-  const { value, velocity, state, offset, deceleration, snap } = {
-    offset: new Value(0),
-    deceleration: 0.998,
-    ...config,
-  };
-  const clock = new Clock();
-  const decayState = {
-    finished: new Value(0),
-    velocity: new Value(0),
-    position: new Value(0),
-    time: new Value(0),
-  };
-
-  const isDecayInterrupted = and(eq(state, State.BEGAN), clockRunning(clock));
-  const finishDecay = [set(offset, decayState.position), stopClock(clock)];
-
-  return block([
-    cond(isDecayInterrupted, finishDecay),
-    cond(neq(state, State.END), [
-      set(decayState.finished, 0),
-      set(decayState.position, add(offset, value)),
-    ]),
-    cond(eq(state, State.END), [
-      cond(and(not(clockRunning(clock)), not(decayState.finished)), [
-        set(decayState.velocity, velocity),
-        set(decayState.time, 0),
-        startClock(clock),
-      ]),
-      decay(clock, decayState, { deceleration }),
-      cond(decayState.finished, finishDecay),
-    ]),
-    decayState.position,
-  ]);
-};
-
-const containerHeight = Dimensions.get('window').height;
-const containerWidth = Dimensions.get('window').width;
-const snapX = (containerWidth - CARD_WIDTH) / 2;
-const snapY = (containerHeight - CARD_HEIGHT) / 2;
-const offsetX = new Value(snapX);
-const offsetY = new Value(snapY);
-
-const PanGesture = (props: Props) => {
+const Spring = () => {
     const state = new Value(State.UNDETERMINED);
     const translationX = new Value(0);
     const translationY = new Value(0);
-    const velocityX = new Value(0)
-    const velocityY = new Value(0)
+    const velocityX = new Value(0);
+    const velocityY = new Value(0);
     const gestureHandler = onGestureEvent({
         state,
         translationX,
         translationY,
         velocityX,
-        velocityY
+        velocityY,
     });
-    const translateX = diffClamp(
-        withSpring({state: state, value: translationX, velocity: velocityX, offset: offsetX, snap: snapX}),
-        0,
-        containerWidth - CARD_WIDTH,
-    );
-    const translateY = diffClamp(
-        withSpring({state: state, value: translationY, velocity: velocityY, offset: offsetY, snap: snapY}),
-        0,
-        containerHeight - CARD_HEIGHT,
-    );
+    const translateX = withSpring({
+        value: translationX,
+        velocity: velocityX,
+        state,
+        offset: offsetX,
+        snapPoints: [snapX],
+    });
+    const translateY = withSpring({
+        value: translationY,
+        velocity: velocityY,
+        state,
+        offset: offsetY,
+        snapPoints: [snapY],
+    });
     return (
         <View style={styles.container}>
             <PanGestureHandler {...gestureHandler}>
-                <Animated.View style={{ transform: [{ translateX }, { translateY }] }}>
+                <Animated.View
+                    style={{
+                        transform: [{ translateX }, { translateY }],
+                    }}
+                >
                     <Card {...{ card }} />
                 </Animated.View>
             </PanGestureHandler>
@@ -120,4 +65,4 @@ const PanGesture = (props: Props) => {
     );
 };
 
-export default PanGesture;
+export default Spring;
